@@ -144,6 +144,67 @@ legPositions.forEach(pos => {
 // Speedy
 const speedy = new THREE.Group();
 
+const roverBodyGeometry = new THREE.BoxGeometry(2.5, 1, 1.5);
+const roverBodyMaterial = new THREE.MeshStandardMaterial({
+    color: 0x3399FF,
+    roughness: 0.5,
+    metalness: 0.5
+});
+const roverBody = new THREE.Mesh(roverBodyGeometry, roverBodyMaterial);
+roverBody.position.y = 0.8;
+roverBody.castShadow = true;
+speedy.add(roverBody);
+
+const panelGeometry = new THREE.BoxGeometry(3, 0.1, 2.5);
+const panelMaterial = new THREE.MeshStandardMaterial({
+    color: 0x1a1a3a,
+    roughness: 0.2,
+    metalness: 0.8,
+});
+const panel = new THREE.Mesh(panelGeometry, panelMaterial);
+panel.position.y = 1.5;
+speedy.add(panel);
+
+const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+const wheelMaterial = new THREE.MeshStandardMaterial({
+    color: 0x222222,
+    roughness: 0.9,
+    metalness: 0.1
+});
+
+const wheelPosition = [
+    [1, 0.4, 1],
+    [1, 0.4, -1],
+    [-1, 0.4, 1],
+    [-1, 0.4, -1],
+    [0, 0.4, 1],
+    [0, 0.4, -1]
+];
+
+wheelPosition.forEach(pos => {
+    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    wheel.position.set(pos[0], pos[1], pos[2]);
+    wheel.rotation.x = Math.PI / 2;
+    speedy.add(wheel);
+});
+
+const antennaGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.5, 8);
+const antennaMaterial = new THREE.MeshStandardMaterial({
+    color: 0xCCCCCC,
+    roughness: 0.3,
+    metalness: 0.7
+});
+const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+antenna.position.set(0, 2, 0);
+speedy.add(antenna);
+
+const antennaBall = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 16, 16),
+    antennaMaterial
+);
+antennaBall.position.set(0, 2.7, 0);
+speedy.add(antennaBall);
+
 
 placeOnSurface(rocket, 30, 45, 5);
 placeOnSurface(quadruped, 0, 100, 0);
