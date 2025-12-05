@@ -75,9 +75,33 @@ function placeOnSurface(obejct, lat, lon, height) {
 const quadruped = new THREE.Group();
 
 const bodyGeometry = new THREE.BoxGeometry(3, 1, 2);
-const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
+const bodyMaterial = new THREE.MeshStandardMaterial({
+    color: 0xFFFF00,
+    roughness: 0.3,
+    metalness: 0.7,
+    flatShading: false
+});
 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+body.position.y = 0.4;
 quadruped.add(body);
+
+const mastGeometry = new THREE.BoxGeometry(0.5, 0.4, 0.4);
+const mast = new THREE.Mesh(mastGeometry, bodyMaterial);
+mast.position.set(0.8, 0.6, 0);
+quadruped.add(mast);
+
+const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+const eyeMaterial = new THREE.MeshStandardMaterial({
+    color: 0x00FFFF,
+    emissive: 0x00FFFF,
+    emissiveIntensity: 0.5
+});
+const eyeLeft = new THREE.Mesh(eyeGeometry, eyeMaterial);
+eyeLeft.position.set(2.2, 0.3, 0.3);
+quadruped.add(eyeLeft);
+const eyeRight = new THREE.Mesh(eyeGeometry, eyeMaterial);
+eyeRight.position.set(2.2, 0.3, -0.3);
+quadruped.add(eyeRight);
 
 const legMaterial = new THREE.MeshStandardMaterial({
     color: 0xFCCB02,
@@ -105,16 +129,25 @@ legPositions.forEach(pos => {
     );
     legLower.position.set(pos[0], pos[1] - 0.8, pos[2]);
 
+    const paw = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2, 16, 16),
+        legMaterial
+    );
+    paw.position.set(pos[0], pos[1] - 1.4, pos[2]);
+
     quadruped.add(legUpper);
     quadruped.add(legLower);
+    quadruped.add(paw);
 });
 
 
 // Speedy
+const speedy = new THREE.Group();
 
 
 placeOnSurface(rocket, 30, 45, 5);
-placeOnSurface(quadruped, -20, 100, 0);
+placeOnSurface(quadruped, 0, 100, 0);
+placeOnSurface(speedy, 100, 30, 0);
 
 const ambientLight = new THREE.AmbientLight(0x404060, 0.3);
 scene.add(ambientLight);
@@ -130,10 +163,12 @@ camera.lookAt(0, 0, 0);
 marsGroup.add(mars);
 marsGroup.add(rocket);
 marsGroup.add(quadruped);
+marsGroup.add(speedy);
 scene.add(marsGroup);
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+let zoomTarget = null;
 let mouseOverMoon = false;
 let mouseOverQuadruped = false;
 
@@ -171,7 +206,7 @@ function animate() {
     marsGroup.scale.x += (targetMarsScale - marsGroup.scale.x) * 0.05;
     marsGroup.scale.y += (targetMarsScale - marsGroup.scale.y) * 0.05;
     marsGroup.scale.z += (targetMarsScale - marsGroup.scale.z) * 0.05;
-    marsGroup.rotation.y += 0.001;
+    marsGroup.rotation.y += 0.005;
     renderer.render(scene, camera);
 }
 animate();
