@@ -13,7 +13,7 @@ const marsGroup = new THREE.Group();
 // Mars
 const marsGeometry = new THREE.SphereGeometry(10, 50, 50);
 const marsMaterial = new THREE.MeshStandardMaterial({
-    color: 0xcccccc,
+    color: 0xcd574d,
     roughness: 0.9,
     metalness: 0.1
 });
@@ -21,6 +21,25 @@ const mars = new THREE.Mesh(marsGeometry, marsMaterial);
 mars.position.set(0, 0, 0);
 mars.castShadow = true;
 mars.receiveShadow = true;
+
+
+function placeOnSurface(object, lat, lon, height = 0) {
+    // lat/lan convertion to radians
+    const phi = (90 - lat) * (Math.PI / 180);
+    const theta = (lon + 180) * (Math.PI / 180);
+
+    const radius = 10 + height;
+    const x = radius * Math.sin(phi) * Math.cos(theta);
+    const y = radius * Math.cos(phi);
+    const z = radius * Math.sin(phi) * Math.sin(theta);
+    object.position.set(x, y, z);
+
+    const normal = new THREE.Vector3(x, y, z).normalize();
+    object.up.copy(normal);
+    const tangent = new THREE.Vector3(-Math.sin(theta), 0, Math.cos(theta)).normalize();
+    object.lookAt(object.position.clone().add(tangent));
+}
+
 
 // Rocket
 const rocketGeometry = new THREE.CylinderGeometry(0.8, 1.2, 10, 16);
@@ -61,15 +80,6 @@ for (let i = 0; i < 3; i++) {
     rocket.add(rocketFin);
 }
 
-function placeOnSurface(object, lat, lon, height) {
-    const phi = (90 - lat) * (Math.PI / 180);
-    const theta = (lon + 180) * (Math.PI / 180);
-    const x = -(10 + height) * Math.sin(phi) * Math.cos(theta);
-    const y = (10 + height) * Math.cos(phi);
-    const z = (10 + height) * Math.sin(phi) * Math.sin(theta);
-    object.position.set(x, y, z);
-    object.lookAt(x * 2, y * 2, z * 2);
-}
 
 // Quadruped
 const quadruped = new THREE.Group();
@@ -109,6 +119,8 @@ const legMaterial = new THREE.MeshStandardMaterial({
     metalness: 0.7
 });
 
+quadruped.legParts = [];
+
 const legPositions = [
     [1, -0.8, 1],
     [1, -0.8, -1],
@@ -117,27 +129,32 @@ const legPositions = [
 ];
 
 legPositions.forEach(pos => {
+    const legGroup = new THREE.Group();
+
     const legUpper = new THREE.Mesh(
         new THREE.CylinderGeometry(0.15, 0.15, 1, 8),
         legMaterial
     );
-    legUpper.position.set(pos[0], pos[1], pos[2]);
+    legUpper.position.set(0, 0, 0);
+    legGroup.add(legUpper);
 
     const legLower = new THREE.Mesh(
         new THREE.CylinderGeometry(0.12, 0.12, 1, 8),
         legMaterial
     );
-    legLower.position.set(pos[0], pos[1] - 0.8, pos[2]);
+    legLower.position.set(0, -1, 0);
+    legGroup.add(legLower);
 
     const paw = new THREE.Mesh(
         new THREE.SphereGeometry(0.2, 16, 16),
         legMaterial
     );
-    paw.position.set(pos[0], pos[1] - 1.4, pos[2]);
+    paw.position.set(0, -1.8, 0);
+    legGroup.add(paw);
 
-    quadruped.add(legUpper);
-    quadruped.add(legLower);
-    quadruped.add(paw);
+    legGroup.position.set(pos[0], pos[1], pos[2]);
+    quadruped.add(legGroup);
+    quadruped.legParts.push(legGroup);
 });
 
 
@@ -171,6 +188,7 @@ const wheelMaterial = new THREE.MeshStandardMaterial({
     roughness: 0.9,
     metalness: 0.1
 });
+speedy.wheels = [];
 
 const wheelPosition = [
     [1, 0.4, 1],
@@ -186,6 +204,7 @@ wheelPosition.forEach(pos => {
     wheel.position.set(pos[0], pos[1], pos[2]);
     wheel.rotation.x = Math.PI / 2;
     speedy.add(wheel);
+    speedy.wheels.push(wheel);
 });
 
 const antennaGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.5, 8);
@@ -206,10 +225,11 @@ antennaBall.position.set(0, 2.7, 0);
 speedy.add(antennaBall);
 
 
-placeOnSurface(rocket, 30, 45, 5);
-placeOnSurface(quadruped, 0, 100, 0);
-placeOnSurface(speedy, 100, 30, 0);
+placeOnSurface(quadruped, 0, 100, 0.2);
+placeOnSurface(speedy, 100, 30, 0.2);
 
+
+// Lighting
 const ambientLight = new THREE.AmbientLight(0x404060, 0.3);
 scene.add(ambientLight);
 
@@ -217,6 +237,29 @@ const directionalLight = new THREE.DirectionalLight(0xFFDE59, 1.0);
 directionalLight.position.set(50, 50, -10);
 directionalLight.target = mars;
 scene.add(directionalLight);
+
+const fillLight = new THREE.DirectionalLight(0x8899FF, 0.3);
+fillLight.position.set(-30, 20, 30);
+scene.add(fillLight);
+
+const starGeometry = new THREE.BufferGeometry();
+const starMaterial = new THREE.PointsMaterial({
+    color: 0xFFFFFF,
+    size: 0.7,
+    transparent: true,
+});
+
+const starVertices = [];
+for (let i = 0; i < 1000; i++) {
+    const x = (Math.random() - 0.5) * 400;
+    const y = (Math.random() - 0.5) * 400;
+    const z = (Math.random() - 0.5) * 400;
+    starVertices.push[x, y, z];
+}
+
+starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+const stars = new THREE.Points(starGeometry, starMaterial);
+
 
 camera.position.set(0, 50, 50);
 camera.lookAt(0, 0, 0);
@@ -226,6 +269,7 @@ marsGroup.add(quadruped);
 marsGroup.add(speedy);
 scene.add(rocket);
 scene.add(marsGroup);
+scene.add(stars);
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -237,20 +281,30 @@ let mouseOverSpeedy = false;
 let targetCameraPos = { x: 0, y: 50, z: 50 };
 let currentCameraPos = { x: 0, y: 50, z: 50 };
 let targetZoomScale = 1.0;
+let isAnimatingMars = true;
+
+let quadrupedWalkCycle = 0;
+const quadrupedWalkSpeed = 0.1;
+
+let speedyWheelRotation = 0;
+const speedyWheelSpeed = 0.2;
 
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('zoom-mars').addEventListener('click', (e) => {
         e.preventDefault();
         zoomTarget = zoomTarget === 'mars' ? null : 'mars';
+        isAnimatingMars = zoomTarget === null || zoomTarget === 'mars';
     });
     document.getElementById('zoom-quadruped').addEventListener('click', (e) => {
         e.preventDefault();
         zoomTarget = zoomTarget === 'quadruped' ? null : 'quadruped';
+        isAnimatingMars = zoomTarget === null;
     });
     document.getElementById('zoom-speedy').addEventListener('click', (e) => {
         e.preventDefault();
         zoomTarget = zoomTarget === 'speedy' ? null : 'speedy';
+        isAnimatingMars = zoomTarget === null;
     });
 });
 
@@ -299,50 +353,55 @@ function animate() {
     if (zoomTarget === 'mars') {
         targetZoomScale = { x: 0, y: 20, z: 20 };
         targetZoomScale = 1.2;
-        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
-        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
-        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
-        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
-        camera.lookAt(0, 0, 0);
     } else if (zoomTarget === 'quadruped') {
         const pos = quadruped.position;
         targetCameraPos = { x: pos.x + 5, y: pos.y + 6, z: pos.z + 5 };
         targetZoomScale = 1.2;
-        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
-        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
-        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
-        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
-        camera.lookAt(pos.x, pos.y, pos.z);
     } else if (zoomTarget === 'speedy') {
         const pos = speedy.position;
         targetCameraPos = { x: pos.x, y: pos.y, z: pos.z };
         targetZoomScale = 1.2;
-        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
-        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
-        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
-        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
-        camera.lookAt(pos.x, pos.y, pos.x);
-    } else {
-        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
-        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
-        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
-        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
-        camera.lookAt(0, 0, 0);
     }
 
+    currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
+    currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
+    currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
+    camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
+
+    if (zoomTarget === 'quadruped') {
+        camera.lookAt(quadruped.position);
+    } else if (zoomTarget === 'speedy') {
+        camera.lookAt(speedy.position);
+    } else {
+        camera.lookAt(0, 0, 0);
+    }
 
     marsGroup.scale.x += (targetZoomScale - marsGroup.scale.x) * 0.05;
     marsGroup.scale.y += (targetZoomScale - marsGroup.scale.y) * 0.05;
     marsGroup.scale.z += (targetZoomScale - marsGroup.scale.z) * 0.05;
-    marsGroup.rotation.y += 0.005;
+    if (isAnimatingMars) {
+        marsGroup.rotation.y += 0.005;
+    }
 
-    const time = Date.now() * 0.002;
-    quadruped.children.forEach((child, idx) => {
-        if (child.isMesh && (child.geometry.type === 'CylinderGeometry' || child.geometry.type === 'SphereGeometry') && idx > 2) {
-            const legGroup = Math.floor((idx - 3) / 3);
-            child.position.y = child.position.y + Math.sin(time + legGroup * Math.PI / 2) * 0.05 - 0.05;
-        }
-    });
+
+    quadrupedWalkCycle += quadrupedWalkSpeed;
+    if (quadruped.legParts) {
+        quadruped.legParts.forEach((legGroup, index) => {
+            const legOffset = index * Math.PI / 2;
+            const legLift = Math.sin(quadrupedWalkCycle + legOffset) * 0.3;
+            legGroup.position.y = -0.8 + legLift;
+            if (legGroup.children[0]) {
+                legGroup.children[0].rotation.x = legLift * 0.5;
+            }
+        });
+    }
+
+    speedyWheelRotation += speedyWheelSpeed;
+    if (speedy.wheels) {
+        speedy.wheels.forEach(wheel => {
+            wheel.rotation.y = speedyWheelRotation;
+        });
+    }
 
     renderer.render(scene, camera);
 }
