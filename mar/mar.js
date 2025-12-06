@@ -61,14 +61,14 @@ for (let i = 0; i < 3; i++) {
     rocket.add(rocketFin);
 }
 
-function placeOnSurface(obejct, lat, lon, height) {
+function placeOnSurface(object, lat, lon, height) {
     const phi = (90 - lat) * (Math.PI / 180);
     const theta = (lon + 180) * (Math.PI / 180);
     const x = -(10 + height) * Math.sin(phi) * Math.cos(theta);
     const y = (10 + height) * Math.cos(phi);
     const z = (10 + height) * Math.sin(phi) * Math.sin(theta);
-    obejct.position.set(x, y, z);
-    obejct.lookAt(x * 2, y * 2, z * 2);
+    object.position.set(x, y, z);
+    object.lookAt(x * 2, y * 2, z * 2);
 }
 
 // Quadruped
@@ -222,52 +222,128 @@ camera.position.set(0, 50, 50);
 camera.lookAt(0, 0, 0);
 
 marsGroup.add(mars);
-marsGroup.add(rocket);
 marsGroup.add(quadruped);
 marsGroup.add(speedy);
+scene.add(rocket);
 scene.add(marsGroup);
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let zoomTarget = null;
-let mouseOverMoon = false;
+let mouseOverMars = false;
 let mouseOverQuadruped = false;
+let mouseOverSpeedy = false;
 
 let targetCameraPos = { x: 0, y: 50, z: 50 };
 let currentCameraPos = { x: 0, y: 50, z: 50 };
-let targetMarsScale = 1.0;
+let targetZoomScale = 1.0;
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('zoom-mars').addEventListener('click', (e) => {
+        e.preventDefault();
+        zoomTarget = zoomTarget === 'mars' ? null : 'mars';
+    });
+    document.getElementById('zoom-quadruped').addEventListener('click', (e) => {
+        e.preventDefault();
+        zoomTarget = zoomTarget === 'quadruped' ? null : 'quadruped';
+    });
+    document.getElementById('zoom-speedy').addEventListener('click', (e) => {
+        e.preventDefault();
+        zoomTarget = zoomTarget === 'speedy' ? null : 'speedy';
+    });
+});
 
 renderer.domElement.addEventListener('mousemove', (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObject(mars);
 
-    mouseOverMoon = intersects.length > 0;
-    mouseOverQuadruped = intersects.length > 0;
+    if (!zoomTarget) {
+        const marsIntersects = raycaster.intersectObject(mars, false);
+        const quadrupedIntersects = raycaster.intersectObject(quadruped, true);
+        const speedyIntersects = raycaster.intersectObject(speedy, true);
 
-    if (mouseOverMoon) {
-        targetMarsScale = 1.2;
-        targetCameraPos = { x: 0, y: 20, z: 20 };
-    } else {
-        targetMarsScale = 1.0;
-        targetCameraPos = { x: 0, y: 50, z: 50 };
+        mouseOverMars = marsIntersects.length > 0;
+        mouseOverQuadruped = quadrupedIntersects.length > 0;
+        mouseOverSpeedy = speedyIntersects.length > 0;
+
+        if (mouseOverMars) {
+            targetZoomScale = 1.2;
+            targetCameraPos = { x: 0, y: 20, z: 20 };
+        } else if (mouseOverQuadruped) {
+            const pos = quadruped.position;
+            targetCameraPos = { x: pos.x + 5, y: pos.y + 6, z: pos.z + 5 };
+            targetZoomScale = 1.2;
+        } else if (mouseOverSpeedy) {
+            const pos = speedy.position;
+            targetZoomScale = 1.2;
+        } else {
+            targetZoomScale = 1.0;
+            targetCameraPos = { x: 0, y: 50, z: 50 };
+        }
     }
 })
 
+const loadingScreen = document.getElementById('loading-screen');
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+    }, 1000);
+})
 
 function animate() {
     requestAnimationFrame(animate);
-    currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
-    currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
-    currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
-    camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
-    camera.lookAt(0, 0, 0);
-    marsGroup.scale.x += (targetMarsScale - marsGroup.scale.x) * 0.05;
-    marsGroup.scale.y += (targetMarsScale - marsGroup.scale.y) * 0.05;
-    marsGroup.scale.z += (targetMarsScale - marsGroup.scale.z) * 0.05;
+    if (zoomTarget === 'mars') {
+        targetZoomScale = { x: 0, y: 20, z: 20 };
+        targetZoomScale = 1.2;
+        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
+        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
+        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
+        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
+        camera.lookAt(0, 0, 0);
+    } else if (zoomTarget === 'quadruped') {
+        const pos = quadruped.position;
+        targetCameraPos = { x: pos.x + 5, y: pos.y + 6, z: pos.z + 5 };
+        targetZoomScale = 1.2;
+        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
+        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
+        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
+        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
+        camera.lookAt(pos.x, pos.y, pos.z);
+    } else if (zoomTarget === 'speedy') {
+        const pos = speedy.position;
+        targetCameraPos = { x: pos.x, y: pos.y, z: pos.z };
+        targetZoomScale = 1.2;
+        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
+        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
+        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
+        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
+        camera.lookAt(pos.x, pos.y, pos.x);
+    } else {
+        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
+        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * 0.05;
+        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * 0.05;
+        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
+        camera.lookAt(0, 0, 0);
+    }
+
+
+    marsGroup.scale.x += (targetZoomScale - marsGroup.scale.x) * 0.05;
+    marsGroup.scale.y += (targetZoomScale - marsGroup.scale.y) * 0.05;
+    marsGroup.scale.z += (targetZoomScale - marsGroup.scale.z) * 0.05;
     marsGroup.rotation.y += 0.005;
+
+    const time = Date.now() * 0.002;
+    quadruped.children.forEach((child, idx) => {
+        if (child.isMesh && (child.geometry.type === 'CylinderGeometry' || child.geometry.type === 'SphereGeometry') && idx > 2) {
+            const legGroup = Math.floor((idx - 3) / 3);
+            child.position.y = child.position.y + Math.sin(time + legGroup * Math.PI / 2) * 0.05 - 0.05;
+        }
+    });
+
     renderer.render(scene, camera);
 }
 animate();
