@@ -3,7 +3,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.128.0/+esm";
 const roverInfo = {
     quadruped: {
         title: "Quadruped Rover",
-        description: "A four-legged autonomous rover designed for comples Martian terrain navigation.",
+        description: "A four-legged autonomous rover designed for complex Martian terrain navigation.",
         specs: [
             { label: "Type", value: "Quadruped Walker" },
             { label: "Legs", value: "4 Articulated Legs" },
@@ -27,17 +27,18 @@ const roverInfo = {
             { label: "Wheels", value: "6 Independent Wheels" },
             { label: "Terrain", value: "Plains & Flat Surfaces" },
             { label: "Sensors", value: "Multi-Spectral Cameras" },
-            { label: "Power", value: "Solar Panel Array" }
+            { label: "Power", value: "Solar Panel Array" },
         ],
         features: [
             "High-speed long-distance traversal",
             "Sample collection arm system",
-            "GPS and inertial navigation"
+            "GPS and inertial navigation",
+            "Advanced obstacle detection"
         ]
     },
-    mar: {
+    mars: {
         title: "M.A.R. Project",
-        description: "Our mission is to make 2 rovers which can work toghether and explore the Martain Surface",
+        description: "Our mission is to make 2 rovers which can work together and explore the Martian Surface",
         content: `
             <h3>Mission Objectives</h3>
             <ul>
@@ -375,7 +376,7 @@ const infoPanel = document.getElementById('info-panel');
 const infoTitle = document.getElementById('info-title');
 const infoBody = document.getElementById('info-body');
 const loadingScreen = document.getElementById('loading-screen');
-const closeInfo = document.getElementById('close-btn')
+const closeInfo = document.getElementById('close-btn');
 
 function showInfo(type) {
     const info = roverInfo[type];
@@ -387,7 +388,10 @@ function showInfo(type) {
     if (info.specs) {
         content += `<h3>Specifications</h3>`;
         info.specs.forEach(spec => {
-            content += `<div class="spec-item"><span class="spec-label">${spec.label}:</span><span class="spec-value">${spec.value}</span></div>`;
+            content += `<div class="spec-item">
+                <span class="spec-label">${spec.label}:</span>
+                <span class="spec-value">${spec.value}</span>
+            </div>`;
         });
     }
 
@@ -434,56 +438,55 @@ let speedyWheelRotation = 0;
 const speedyWheelSpeed = 0.15;
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        loadingScreen.classList.add('hidden');
-    }, 1000);
+setTimeout(() => {
+    loadingScreen.classList.add('hidden');
+}, 1000);
 
-    document.getElementById('home').addEventListener('click', (e) => {
-        e.preventDefault();
-        zoomTarget = null;
-        hideInfo();
-    });
-    document.getElementById('zoom-mars').addEventListener('click', (e) => {
-        e.preventDefault();
-        const newTarget = zoomTarget === 'mars' ? null : 'mars';
-        zoomTarget = newTarget;
-        if (newTarget) {
-            showInfo('mars');
-        } else {
-            hideInfo();
-        }
-        isAnimatingMars = zoomTarget === null || zoomTarget === 'mars';
-    });
-    document.getElementById('zoom-quadruped').addEventListener('click', (e) => {
-        e.preventDefault();
-        const newTarget = zoomTarget === 'quadruped' ? null : 'quadruped';
-        zoomTarget = newTarget;
-        if (newTarget) {
-            showInfo('quadruped');
-        }
-        else {
-            hideInfo();
-        }
-        isAnimatingMars = zoomTarget === null;
-    });
-    document.getElementById('zoom-speedy').addEventListener('click', (e) => {
-        e.preventDefault();
-        const newTarget = zoomTarget === 'speedy' ? null : 'speedy';
-        zoomTarget = newTarget;
-        if (newTarget) {
-            showInfo('speedy');
-        }
-        else {
-            hideInfo();
-        }
-        isAnimatingMars = zoomTarget === null;
-    });
-
-    if (closeInfo) {
-        closeInfo.addEventListener('click', hideInfo);
-    }
+document.getElementById('home').addEventListener('click', (e) => {
+    e.preventDefault();
+    zoomTarget = null;
+    hideInfo();
 });
+
+document.getElementById('zoom-mars').addEventListener('click', (e) => {
+    e.preventDefault();
+    const newTarget = zoomTarget === 'mars' ? null : 'mars';
+    zoomTarget = newTarget;
+    if (newTarget) {
+        showInfo('mars');
+    } else {
+        hideInfo();
+    }
+    isAnimatingMars = zoomTarget === null || zoomTarget === 'mars';
+});
+
+document.getElementById('zoom-quadruped').addEventListener('click', (e) => {
+    e.preventDefault();
+    const newTarget = zoomTarget === 'quadruped' ? null : 'quadruped';
+    zoomTarget = newTarget;
+    if (newTarget) {
+        showInfo('quadruped');
+    }
+    else {
+        hideInfo();
+    }
+    isAnimatingMars = zoomTarget === null;
+});
+
+document.getElementById('zoom-speedy').addEventListener('click', (e) => {
+    e.preventDefault();
+    const newTarget = zoomTarget === 'speedy' ? null : 'speedy';
+    zoomTarget = newTarget;
+    if (newTarget) {
+        showInfo('speedy');
+    }
+    else {
+        hideInfo();
+    }
+    isAnimatingMars = zoomTarget === null;
+});
+
+closeInfo.addEventListener('click', hideInfo);
 
 renderer.domElement.addEventListener('mousemove', (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -526,7 +529,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
 function animate() {
     requestAnimationFrame(animate);
     if (zoomTarget === 'mars') {
-        targetZoomScale = { x: 0, y: 20, z: 20 };
+        targetCameraPos = { x: 0, y: 20, z: 20 };
         targetZoomScale = 1.2;
         targetLookAt = { x: 0, y: 0, z: 0 };
     } else if (zoomTarget === 'quadruped') {
