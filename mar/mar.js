@@ -1,19 +1,101 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.128.0/+esm";
 
+const roverInfo = {
+    quadruped: {
+        title: "Quadruped Rover",
+        description: "A four-legged autonomous rover designed for comples Martian terrain navigation.",
+        specs: [
+            { label: "Type", value: "Quadruped Walker" },
+            { label: "Legs", value: "4 Articulated Legs" },
+            { label: "Terrain", value: "Rocky & Steep Surface" },
+            { label: "Sensors", value: "Stereo Vision Cameras" },
+            { label: "Power", value: "Solar + Battery Hybrid" },
+            { label: "Speed", value: "0.5 m/s Average" }
+        ],
+        features: [
+            "Advanced stability control for uneven terrain",
+            "Independent leg movement for obstacle traversal",
+            "Real-time environment mapping",
+            "Autonomous navigation system",
+        ]
+    },
+    speedy: {
+        title: "Speedy Rover",
+        description: "A wheeled high-speed rover optimized for fast exploration and sample collection across Martian plains.",
+        specs: [
+            { label: "Type", value: "Wheeled Explorer" },
+            { label: "Wheels", value: "6 Independent Wheels" },
+            { label: "Terrain", value: "Plains & Flat Surfaces" },
+            { label: "Sensors", value: "Multi-Spectral Cameras" },
+            { label: "Power", value: "Solar Panel Array" }
+        ],
+        features: [
+            "High-speed long-distance traversal",
+            "Sample collection arm system",
+            "GPS and inertial navigation"
+        ]
+    },
+    mar: {
+        title: "M.A.R. Project",
+        description: "Our mission is to make 2 rovers which can work toghether and explore the Martain Surface",
+        content: `
+            <h3>Mission Objectives</h3>
+            <ul>
+                <li>Map unexplored regions of Mars</li>
+                <li>Collect geological samples</li>
+                <li>Study Martian climate patterns</li>
+                <li>Search for signs of past water</li>
+                <li>Test autonomous navigation systems</li>
+            </ul>
+            <h3>Project Timeline</h3>
+            <p>Phase 1: Design and prototyping (Current)<br>
+            Phase 2: Testing in Mars-like environments<br>
+            Phase 3: Mission deployment planning</p>
+        `
+    }
+};
+
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x222222, 50, 200);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x222222);
+renderer.setClearColor(0x1a1a1a);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
+
+const earthGroup = new THREE.Group();
+
+const earthGeometry = new THREE.SphereGeometry();
+const earthTexture = new THREE.TextureLoader().load(
+    '/img/8k_earth_daymap.jpg',
+    () => { renderer.render(scene, camera); },
+    undefined,
+    (err) => { console.error('Error loading texture', err); }
+);
+const earthMaterial = new THREE.MeshStandardMaterial({
+    map: earthTexture,
+    roughness: 0.9,
+    metalness: 0.1
+});
+const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+earth.position.set(20, 0, 0);
+
 
 const marsGroup = new THREE.Group();
 
 // Mars
-const marsGeometry = new THREE.SphereGeometry(10, 50, 50);
+const marsGeometry = new THREE.SphereGeometry(10, 64, 64);
+const marsTexture = new THREE.TextureLoader().load(
+    '/img/8k_mars.jpg',
+    () => { renderer.render(scene, camera); },
+    undefined,
+    (err) => { console.error('Error loading texture', err); }
+);
 const marsMaterial = new THREE.MeshStandardMaterial({
-    color: 0xcd574d,
+    map: marsTexture,
     roughness: 0.9,
     metalness: 0.1
 });
@@ -42,6 +124,8 @@ function placeOnSurface(object, lat, lon, height = 0) {
 
 
 // Rocket
+const rocketGroup = new THREE.Group();
+
 const rocketGeometry = new THREE.CylinderGeometry(0.8, 1.2, 10, 16);
 const rocketMaterial = new THREE.MeshStandardMaterial({
     color: 0xFF0000,
@@ -49,19 +133,18 @@ const rocketMaterial = new THREE.MeshStandardMaterial({
     metalness: 0.7
 });
 const rocket = new THREE.Mesh(rocketGeometry, rocketMaterial);
-rocket.position.set(10, 10, -10);
-rocket.rotation.x = Math.PI / -3;
 rocket.castShadow = true;
+rocketGroup.add(rocket);
 
 const rocketHeadGeometry = new THREE.ConeGeometry(0.8, 3, 16);
 const rocketHeadMaterial = new THREE.MeshStandardMaterial({
-    color: 0x00FF00,
+    color: 0x30FF30,
     roughness: 0.4,
     metalness: 0.6
 });
 const rocketHead = new THREE.Mesh(rocketHeadGeometry, rocketHeadMaterial);
 rocketHead.position.y = 6.5;
-rocket.add(rocketHead);
+rocketGroup.add(rocketHead);
 
 const rocketFinGeometry = new THREE.BoxGeometry(0.2, 3, 2);
 const rocketFinMaterial = new THREE.MeshStandardMaterial({
@@ -77,8 +160,11 @@ for (let i = 0; i < 3; i++) {
     rocketFin.position.z = Math.sin(angle) * 1;
     rocketFin.position.y = -4;
     rocketFin.rotation.y = angle;
-    rocket.add(rocketFin);
+    rocketGroup.add(rocketFin);
 }
+
+rocketGroup.position.set(10, 10, -10);
+rocketGroup.rotation.x = Math.PI / -3;
 
 
 // Quadruped
@@ -190,6 +276,13 @@ const wheelMaterial = new THREE.MeshStandardMaterial({
 });
 speedy.wheels = [];
 
+const spokeGeometry = new THREE.BoxGeometry(1, 0.25, 0.05);
+const spokeMaterial = new THREE.MeshStandardMaterial({
+    color: 0x666666,
+    roughness: 0.5,
+    metalness: 0.7
+});
+
 const wheelPosition = [
     [1, 0.4, 1],
     [1, 0.4, -1],
@@ -203,6 +296,13 @@ wheelPosition.forEach(pos => {
     const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
     wheel.position.set(pos[0], pos[1], pos[2]);
     wheel.rotation.x = Math.PI / 2;
+    for (let i = 0; i < 5; i++) {
+        const spoke = new THREE.Mesh(spokeGeometry, spokeMaterial);
+        const angle = (i / 5) * Math.PI * 2;
+        spoke.position.set(Math.sin(angle) * 0.2, 0, Math.cos(angle) * 0.02);
+        spoke.rotation.y = angle;
+        wheel.add(spoke);
+    }
     speedy.add(wheel);
     speedy.wheels.push(wheel);
 });
@@ -225,8 +325,26 @@ antennaBall.position.set(0, 2.7, 0);
 speedy.add(antennaBall);
 
 
-placeOnSurface(quadruped, 0, 100, 0.2);
-placeOnSurface(speedy, 100, 30, 0.2);
+const starGeometry = new THREE.BufferGeometry();
+const starMaterial = new THREE.PointsMaterial({
+    color: 0xFFFFFF,
+    size: 0.5,
+    sizeAttenuation: true
+});
+const starsVertices = [];
+for (let i = 0; i < 1000; i++) {
+    const x = (Math.random() - 0.5) * 400;
+    const y = (Math.random() - 0.5) * 400;
+    const z = (Math.random() - 0.5) * 400;
+    starsVertices.push(x, y, z);
+}
+starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+const stars = new THREE.Points(starGeometry, starMaterial);
+scene.add(stars);
+
+
+placeOnSurface(quadruped, 0, 60, 0.5);
+placeOnSurface(speedy, 100, 30, 0);
 
 
 // Lighting
@@ -242,44 +360,70 @@ const fillLight = new THREE.DirectionalLight(0x8899FF, 0.3);
 fillLight.position.set(-30, 20, 30);
 scene.add(fillLight);
 
-const starGeometry = new THREE.BufferGeometry();
-const starMaterial = new THREE.PointsMaterial({
-    color: 0xFFFFFF,
-    size: 0.7,
-    transparent: true,
-});
-
-const starVertices = [];
-for (let i = 0; i < 1000; i++) {
-    const x = (Math.random() - 0.5) * 400;
-    const y = (Math.random() - 0.5) * 400;
-    const z = (Math.random() - 0.5) * 400;
-    starVertices.push[x, y, z];
-}
-
-starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-const stars = new THREE.Points(starGeometry, starMaterial);
-
-
 camera.position.set(0, 50, 50);
 camera.lookAt(0, 0, 0);
 
 marsGroup.add(mars);
 marsGroup.add(quadruped);
 marsGroup.add(speedy);
-scene.add(rocket);
+scene.add(rocketGroup);
 scene.add(marsGroup);
-scene.add(stars);
+scene.add(earth);
+
+
+const infoPanel = document.getElementById('info-panel');
+const infoTitle = document.getElementById('info-title');
+const infoBody = document.getElementById('info-body');
+const loadingScreen = document.getElementById('loading-screen');
+const closeInfo = document.getElementById('close-btn')
+
+function showInfo(type) {
+    const info = roverInfo[type];
+    if (!info) return;
+
+    infoTitle.textContent = info.title;
+    let content = `<p>${info.description}</p>`;
+
+    if (info.specs) {
+        content += `<h3>Specifications</h3>`;
+        info.specs.forEach(spec => {
+            content += `<div class="spec-item"><span class="spec-label">${spec.label}:</span><span class="spec-value">${spec.value}</span></div>`;
+        });
+    }
+
+    if (info.features) {
+        content += `<h3>Key Features</h3><ul>`;
+        info.features.forEach(feature => {
+            content += `<li>${feature}</li>`;
+        });
+        content += `</ul>`;
+    }
+
+    if (info.content) {
+        content += info.content;
+    }
+
+    infoBody.innerHTML = content;
+    infoPanel.classList.add('active');
+}
+
+function hideInfo() {
+    infoPanel.classList.remove('active');
+}
+
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let zoomTarget = null;
+let mouseOverEarth = false;
 let mouseOverMars = false;
 let mouseOverQuadruped = false;
 let mouseOverSpeedy = false;
 
 let targetCameraPos = { x: 0, y: 50, z: 50 };
 let currentCameraPos = { x: 0, y: 50, z: 50 };
+let targetLookAt = { x: 0, y: 0, z: 0 };
+let currentLookAt = { x: 0, y: 0, z: 0 };
 let targetZoomScale = 1.0;
 let isAnimatingMars = true;
 
@@ -287,25 +431,58 @@ let quadrupedWalkCycle = 0;
 const quadrupedWalkSpeed = 0.1;
 
 let speedyWheelRotation = 0;
-const speedyWheelSpeed = 0.2;
+const speedyWheelSpeed = 0.15;
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+    }, 1000);
+
+    document.getElementById('home').addEventListener('click', (e) => {
+        e.preventDefault();
+        zoomTarget = null;
+        hideInfo();
+    });
     document.getElementById('zoom-mars').addEventListener('click', (e) => {
         e.preventDefault();
-        zoomTarget = zoomTarget === 'mars' ? null : 'mars';
+        const newTarget = zoomTarget === 'mars' ? null : 'mars';
+        zoomTarget = newTarget;
+        if (newTarget) {
+            showInfo('mars');
+        } else {
+            hideInfo();
+        }
         isAnimatingMars = zoomTarget === null || zoomTarget === 'mars';
     });
     document.getElementById('zoom-quadruped').addEventListener('click', (e) => {
         e.preventDefault();
-        zoomTarget = zoomTarget === 'quadruped' ? null : 'quadruped';
+        const newTarget = zoomTarget === 'quadruped' ? null : 'quadruped';
+        zoomTarget = newTarget;
+        if (newTarget) {
+            showInfo('quadruped');
+        }
+        else {
+            hideInfo();
+        }
         isAnimatingMars = zoomTarget === null;
     });
     document.getElementById('zoom-speedy').addEventListener('click', (e) => {
         e.preventDefault();
-        zoomTarget = zoomTarget === 'speedy' ? null : 'speedy';
+        const newTarget = zoomTarget === 'speedy' ? null : 'speedy';
+        zoomTarget = newTarget;
+        if (newTarget) {
+            showInfo('speedy');
+        }
+        else {
+            hideInfo();
+        }
         isAnimatingMars = zoomTarget === null;
     });
+
+    if (closeInfo) {
+        closeInfo.addEventListener('click', hideInfo);
+    }
 });
 
 renderer.domElement.addEventListener('mousemove', (event) => {
@@ -326,41 +503,44 @@ renderer.domElement.addEventListener('mousemove', (event) => {
         if (mouseOverMars) {
             targetZoomScale = 1.2;
             targetCameraPos = { x: 0, y: 20, z: 20 };
+            targetLookAt = { x: 0, y: 0, z: 0 };
         } else if (mouseOverQuadruped) {
             const pos = quadruped.position;
             targetCameraPos = { x: pos.x + 5, y: pos.y + 6, z: pos.z + 5 };
             targetZoomScale = 1.2;
+            targetLookAt = { x: pos.x, y: pos.y, z: pos.z };
         } else if (mouseOverSpeedy) {
             const pos = speedy.position;
+            targetCameraPos = { x: pos.x + 5, y: pos.y + 6, z: pos.z + 5 };
             targetZoomScale = 1.2;
+            targetLookAt = { x: pos.x, y: pos.y, z: pos.z };
         } else {
             targetZoomScale = 1.0;
             targetCameraPos = { x: 0, y: 50, z: 50 };
+            targetLookAt = { x: 0, y: 0, z: 0 };
         }
     }
-})
+});
 
-const loadingScreen = document.getElementById('loading-screen');
-
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        loadingScreen.classList.add('hidden');
-    }, 1000);
-})
 
 function animate() {
     requestAnimationFrame(animate);
     if (zoomTarget === 'mars') {
         targetZoomScale = { x: 0, y: 20, z: 20 };
         targetZoomScale = 1.2;
+        targetLookAt = { x: 0, y: 0, z: 0 };
     } else if (zoomTarget === 'quadruped') {
-        const pos = quadruped.position;
-        targetCameraPos = { x: pos.x + 5, y: pos.y + 6, z: pos.z + 5 };
-        targetZoomScale = 1.2;
+        const pos = quadruped.getWorldPosition(new THREE.Vector3());
+        const offset = new THREE.Vector3(5, 5, 5);
+        targetCameraPos = { x: pos.x + offset.x, y: pos.y + offset.y, z: pos.z + offset.z };
+        targetZoomScale = 1.0;
+        targetLookAt = { x: pos.x, y: pos.y, z: pos.z };
     } else if (zoomTarget === 'speedy') {
-        const pos = speedy.position;
-        targetCameraPos = { x: pos.x, y: pos.y, z: pos.z };
-        targetZoomScale = 1.2;
+        const pos = speedy.getWorldPosition(new THREE.Vector3());
+        const offset = new THREE.Vector3(5, 5, 5);
+        targetCameraPos = { x: pos.x + offset.x, y: pos.y + offset.y, z: pos.z + offset.z };
+        targetZoomScale = 1.0;
+        targetLookAt = { x: pos.x, y: pos.y, z: pos.z };
     }
 
     currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * 0.05;
@@ -380,8 +560,9 @@ function animate() {
     marsGroup.scale.y += (targetZoomScale - marsGroup.scale.y) * 0.05;
     marsGroup.scale.z += (targetZoomScale - marsGroup.scale.z) * 0.05;
     if (isAnimatingMars) {
-        marsGroup.rotation.y += 0.005;
+        marsGroup.rotation.y += 0.001;
     }
+    earth.rotation.y += 0.005;
 
 
     quadrupedWalkCycle += quadrupedWalkSpeed;
