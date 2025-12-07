@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Post</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div class="container">
+            <h1>Write New Blog Posts</h1>
+            <form method="POST" action="/admin/post">
+                <input type="text" name="title" placeholder="Post Title" required>
+                <label for="author">Select Author Team: </label>
+                <select id="author" name="author" required>
+                    <option value="quadruped team">Quadruped Team</option>
+                    <option value="speedy team">Speedy Team</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+
+                <textarea name="content" placeholder="Write your blog content here (supports basic HTML/MarkDown)" required></textarea>
+
+                <button type="submit">Publish Blog Post</button>
+            </form>
+            <p style="margin-top: 20px;"><a href="/admin/logout">Logout</a></p>
+        </div>
+    </body>
+</html>
