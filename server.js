@@ -4,6 +4,7 @@ const session = require('express-session');
 require('dotenv').config();
 
 const admin = require('firebase-admin');
+const { send } = require('process');
 
 const serviceAccountJsonString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
@@ -120,6 +121,9 @@ app.post('/admin/post', requireAdmin, async (req, res) => {
     }
 });
 
+app.use((req,res) => {
+    res.status(404).send("<h1>404 Page not found</h1><a href='/'>Get back to home</a>")
+});
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
